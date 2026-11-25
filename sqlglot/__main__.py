@@ -55,7 +55,8 @@ parser.add_argument(
 parser.add_argument(
     "--error-level",
     dest="error_level",
-    type=str,
+    type=str.upper,
+    choices=[level.name for level in sqlglot.ErrorLevel],
     default="IMMEDIATE",
     help="IGNORE, WARN, RAISE, IMMEDIATE (default)",
 )
@@ -68,9 +69,14 @@ parser.add_argument(
 
 
 args = parser.parse_args()
-error_level = sqlglot.ErrorLevel[args.error_level.upper()]
+error_level = sqlglot.ErrorLevel[args.error_level]
 
 sql = sys.stdin.read() if args.sql == "-" else args.sql
+
+for dialect in (args.read, args.write):
+    if dialect is not None and dialect.lower() not in sqlglot.Dialects:
+        available = ", ".join(sorted(name for name in sqlglot.Dialects if name))
+        parser.error(f"Unknown dialect {dialect!r}. Available dialects: {available}")
 
 if args.parse:
     objs: list[str] | list[sqlglot.tokens.Token] = [
